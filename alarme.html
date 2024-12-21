@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu Alarme Incendie</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+        #alarm {
+            position: absolute;
+            top: 50px;
+            left: 50px;
+            width: 150px;
+            cursor: pointer;
+        }
+        #key {
+            position: absolute;
+            bottom: 50px;
+            left: 50px;
+            width: 80px;
+            cursor: pointer;
+            display: none;
+        }
+        #map {
+            position: absolute;
+            top: 200px;
+            right: 50px;
+            width: 300px;
+            cursor: pointer;
+            border: 2px solid #333;
+        }
+        #map-enlarged {
+            position: fixed;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            display: none;
+        }
+        #map-enlarged img {
+            width: 90%;
+            height: auto;
+            cursor: pointer;
+        }
+        .zone {
+            position: absolute;
+            background-color: rgba(255, 0, 0, 0.5);
+            border: 2px solid red;
+            display: none;
+        }
+        .zone.active {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0% { background-color: rgba(255, 0, 0, 0.5); }
+            50% { background-color: rgba(255, 0, 0, 0.8); }
+            100% { background-color: rgba(255, 0, 0, 0.5); }
+        }
+        #alarm-selection {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+        }
+        select {
+            padding: 5px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Sélection de l'alarme -->
+        <div id="alarm-selection">
+            <label for="alarm-choice">Choisissez une alarme :</label>
+            <select id="alarm-choice">
+                <option value="https://th.bing.com/th/id/OIP.1B0HZI0zlsnQRmpb7h-mBwHaHY?rs=1&pid=ImgDetMain">Alarme 1</option>
+                <option value="https://th.bing.com/th/id/R.22792dec5d68169220a7d057c0eb13cc?rik=nb4WCBh3SuBt4w&pid=ImgRaw&r=0">Alarme 2</option>
+                <option value="https://th.bing.com/th/id/R.25bb3fe4ff121dbe5600314ad65ffef9?rik=8u%2fbpfh2mcx2gQ&pid=ImgRaw&r=0">Alarme 3</option>
+            </select>
+        </div>
+
+        <!-- Alarme -->
+        <img id="alarm" src="https://th.bing.com/th/id/OIP.1B0HZI0zlsnQRmpb7h-mBwHaHY?rs=1&pid=ImgDetMain" alt="Alarme incendie">
+
+        <!-- Clé -->
+        <img id="key" src="https://materiel-securite-incendie.fireless.fr/750-thickbox_default/cle-de-rearmement.jpg" alt="Clé de réarmement">
+
+        <!-- Carte -->
+        <img id="map" src="https://th.bing.com/th/id/OIP.xJY-2bMu8gN7AUS5szH2zgHaG6?rs=1&pid=ImgDetMain" alt="Carte">
+
+        <div id="map-enlarged">
+            <img src="https://th.bing.com/th/id/OIP.xJY-2bMu8gN7AUS5szH2zgHaG6?rs=1&pid=ImgDetMain" alt="Carte agrandie">
+        </div>
+
+        <div class="zone" id="zone1" style="top: 50px; left: 50px; width: 100px; height: 100px;"></div>
+        <div class="zone" id="zone2" style="top: 200px; left: 200px; width: 100px; height: 100px;"></div>
+    </div>
+
+    <audio id="alarm-sound" src="file:///C:/Users/Nathan/Downloads/ALRMElec_Alarme%20incendie%20collectivite%203%20(ID%202249)_LS.wav"></audio>
+
+    <script>
+        const alarm = document.getElementById('alarm');
+        const key = document.getElementById('key');
+        const map = document.getElementById('map');
+        const mapEnlarged = document.getElementById('map-enlarged');
+        const mapImage = mapEnlarged.querySelector('img');
+        const alarmSound = document.getElementById('alarm-sound');
+        const zones = document.querySelectorAll('.zone');
+        const alarmChoice = document.getElementById('alarm-choice');
+
+        let isAlarmOn = false;
+        let hasKey = false;
+        let selectedZone = null;
+
+        // Changer l'image de l'alarme en fonction de la sélection
+        alarmChoice.addEventListener('change', (e) => {
+            alarm.src = e.target.value;
+        });
+
+        // Activer/Arrêter l'alarme
+        alarm.addEventListener('click', () => {
+            if (!isAlarmOn) {
+                if (selectedZone) {
+                    alarmSound.loop = true;
+                    alarmSound.play();
+                    isAlarmOn = true;
+                    key.style.display = 'block';
+                    selectedZone.classList.add('active');
+                    document.body.style.animation = 'blink 1s infinite';
+                } else {
+                    alert("Veuillez sélectionner une zone sur la carte avant de déclencher l'alarme.");
+                }
+            } else if (hasKey) {
+                alarmSound.pause();
+                alarmSound.currentTime = 0;
+                isAlarmOn = false;
+                key.style.display = 'none';
+                if (selectedZone) selectedZone.classList.remove('active');
+                document.body.style.animation = '';
+            } else {
+                alert("Vous avez besoin de la clé pour arrêter l'alarme.");
+            }
+        });
+
+        // Obtenir la clé
+        key.addEventListener('click', () => {
+            if (isAlarmOn) {
+                hasKey = true;
+                alert("Vous avez récupéré la clé ! Cliquez sur l'alarme pour l'arrêter.");
+            }
+        });
+
+        // Agrandir la carte
+        map.addEventListener('click', () => {
+            mapEnlarged.style.display = 'flex';
+        });
+
+        mapImage.addEventListener('click', () => {
+            selectedZone = zones[Math.floor(Math.random() * zones.length)];
+            mapEnlarged.style.display = 'none';
+            alert(`Zone sélectionnée : ${selectedZone.id}`);
+        });
+    </script>
+</body>
+</html>
